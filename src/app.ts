@@ -3,6 +3,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { config } from './config/env.js';
+import { requestId } from './middleware/requestId.js';
+import { globalLimiter, authLimiter } from './middleware/rateLimiter.js';
 import { notFound } from './middleware/notFound.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import authRoutes from './modules/auth/auth.routes.js';
@@ -12,8 +14,14 @@ import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
 
 const app = express();
 
+// Request ID for tracing
+app.use(requestId);
+
 // Security headers
 app.use(helmet());
+
+// Rate limiting
+app.use(globalLimiter);
 
 // CORS
 app.use(cors());
@@ -41,7 +49,7 @@ app.get('/api/v1/health', (_req, res) => {
 });
 
 // API routes
-app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/auth', authLimiter, authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/records', recordRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
