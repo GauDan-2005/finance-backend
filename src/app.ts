@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import { config } from './config/env.js';
 import { notFound } from './middleware/notFound.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import authRoutes from './modules/auth/auth.routes.js';
 
 const app = express();
 
@@ -36,7 +37,8 @@ app.get('/api/v1/health', (_req, res) => {
   });
 });
 
-// API routes will be mounted here in subsequent commits
+// API routes
+app.use('/api/v1/auth', authRoutes);
 
 // 404 handler
 app.use(notFound);
