@@ -7,6 +7,7 @@ import { notFound } from './middleware/notFound.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import userRoutes from './modules/user/user.routes.js';
+import recordRoutes from './modules/record/record.routes.js';
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.get('/api/v1/health', (_req, res) => {
 // API routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/records', recordRoutes);
 
 // 404 handler
 app.use(notFound);
