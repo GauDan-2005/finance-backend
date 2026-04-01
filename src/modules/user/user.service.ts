@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../config/database.js';
 import { ApiError } from '../../utils/ApiError.js';
+import { buildPaginationParams, buildPaginationMeta } from '../../utils/pagination.js';
 import { UpdateUserInput, ListUsersQuery } from './user.schema.js';
 
 const userSelectFields = {
@@ -16,7 +17,7 @@ const userSelectFields = {
 export const userService = {
   async listUsers(query: ListUsersQuery) {
     const { page, limit, role, isActive, search } = query;
-    const skip = (page - 1) * limit;
+    const { skip, take } = buildPaginationParams(page, limit);
 
     const where: Prisma.UserWhereInput = {
       ...(role && { role }),
@@ -30,7 +31,7 @@ export const userService = {
       prisma.user.findMany({
         where,
         skip,
-        take: limit,
+        take,
         orderBy: { createdAt: 'desc' },
         select: userSelectFields,
       }),
@@ -39,12 +40,7 @@ export const userService = {
 
     return {
       data: users,
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      meta: buildPaginationMeta(total, page, limit),
     };
   },
 

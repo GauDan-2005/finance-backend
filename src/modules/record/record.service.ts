@@ -1,6 +1,8 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../config/database.js';
 import { ApiError } from '../../utils/ApiError.js';
+import { buildPaginationParams, buildPaginationMeta } from '../../utils/pagination.js';
+import { buildDateRangeFilter } from '../../utils/filters.js';
 import { CreateRecordInput, UpdateRecordInput, ListRecordsQuery } from './record.schema.js';
 
 const recordInclude = {
@@ -28,26 +30,22 @@ export const recordService = {
 
   async listRecords(query: ListRecordsQuery) {
     const { page, limit, type, category, startDate, endDate, search, sortBy, sortOrder } = query;
-    const skip = (page - 1) * limit;
+    const { skip, take } = buildPaginationParams(page, limit);
+    const dateFilter = buildDateRangeFilter(startDate, endDate);
 
     const where: Prisma.FinancialRecordWhereInput = {
       isDeleted: false,
       ...(type && { type }),
       ...(category && { category }),
       ...(search && { description: { contains: search } }),
-      ...((startDate || endDate) && {
-        date: {
-          ...(startDate && { gte: new Date(startDate) }),
-          ...(endDate && { lte: new Date(endDate) }),
-        },
-      }),
+      ...(dateFilter && { date: dateFilter }),
     };
 
     const [records, total] = await Promise.all([
       prisma.financialRecord.findMany({
         where,
         skip,
-        take: limit,
+        take,
         orderBy: { [sortBy]: sortOrder },
         include: recordInclude,
       }),
@@ -56,12 +54,7 @@ export const recordService = {
 
     return {
       data: records,
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      meta: buildPaginationMeta(total, page, limit),
     };
   },
 
